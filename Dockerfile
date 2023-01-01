@@ -13,7 +13,7 @@ RUN apt install -yqq python3-pip && \
     apt install -yqq libffi-dev && \
     apt install -yqq libssl-dev
 
-RUN mkdir -p /app/config
+RUN mkdir -p /app/keys
 
 COPY requirements.txt /tmp
 
