@@ -1,0 +1,253 @@
+<html>
+
+<head>
+
+    <style>
+        ha-card {
+            background-color: transparent;
+            box-shadow: var(--paper-material-elevation-0_-_box-shadow);
+        }
+        
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: "Helvetica Neue", Helvetica, Arial, Geneva, sans-serif
+        }
+        
+        .container {
+            width: 224px;
+            margin: 0 auto
+        }
+        
+        #remote-control-mibox {
+            position: relative;
+            background: url(/dist/mibox/remote-back.png) no-repeat;
+            width: 153px;
+            height: 608px
+        }
+        
+        #remote-control-mibox h2,
+        #remote-control-mibox span {
+            position: absolute;
+            left: -5000px
+        }
+        
+        #remote-control-mibox ul {
+            margin: 0;
+            padding: 0;
+            list-style-type: none
+        }
+        
+        #power a,
+        #volumeup a,
+        #volumedown a,
+        #clickleft a,
+        #clickright a,
+        #mute a,
+        #microphone a,
+        #info a,
+        #home a,
+        #back a,
+        #top a,
+        #bottom a,
+        #ok a {
+            position: absolute;
+            display: block
+        }
+        
+        #remote-control-mibox li#power a {
+            left: 17px;
+            top: 37px;
+            width: 29px;
+            height: 30px;
+            background: url(/dist/mibox/power.png) no-repeat
+        }
+        
+        #remote-control-mibox li#power a:hover {
+            background-image: url(/dist/mibox/power_over.png);
+            background-repeat: no-repeat;
+            background-position: 0 0px
+        }
+        
+        #remote-control-mibox li#microphone a {
+            left: 119px;
+            top: 250px;
+            width: 28px;
+            height: 29px;
+            background: url(/dist/mibox/microphone.png) no-repeat
+        }
+        
+        #remote-control-mibox li#microphone a:hover {
+            background-image: url(/dist/mibox/microphone_over.png);
+            background-repeat: no-repeat;
+            background-position: 0 0px
+        }
+        
+        #remote-control-mibox li#volumeup a {
+            left: 69px;
+            top: 299px;
+            width: 29px;
+            height: 30px;
+            background: url(/dist/mibox/volume.png) no-repeat
+        }
+        
+        #remote-control-mibox li#volumeup a:hover {
+            background-image: url(/dist/mibox/volume_over.png);
+            background-repeat: no-repeat;
+            background-position: 0 0px
+        }
+        
+        #remote-control-mibox li#volumedown a {
+            left: 69px;
+            top: 359px;
+            width: 29px;
+            height: 30px;
+            background: url(/dist/mibox/volumedown.png) no-repeat
+        }
+        
+        #remote-control-mibox li#volumedown a:hover {
+            background-image: url(/dist/mibox/volumedown_over.png);
+            background-repeat: no-repeat;
+            background-position: 0 0px
+        }
+        
+        #remote-control-mibox li#clickleft a {
+            left: 21px;
+            top: 137px;
+            width: 29px;
+            height: 29px;
+            background: url(/dist/mibox/clickleft.png) no-repeat
+        }
+        
+        #remote-control-mibox li#clickleft a:hover {
+            background-image: url(/dist/mibox/clickleft_over.png);
+            background-repeat: no-repeat;
+            background-position: 0 0px
+        }
+        
+        #remote-control-mibox li#clickright a {
+            left: 116px;
+            top: 138px;
+            width: 29px;
+            height: 29px;
+            background: url(/dist/mibox/clickright.png) no-repeat
+        }
+        
+        #remote-control-mibox li#clickright a:hover {
+            background-image: url(/dist/mibox/clickright_over.png);
+            background-repeat: no-repeat;
+            background-position: 0 0px
+        }
+        
+        #remote-control-mibox li#source a:hover {
+            background-image: url(/dist/mibox/remote-sitemap.jpg);
+            background-repeat: no-repeat;
+            background-position: 0 -37px
+        }
+        
+        #remote-control-mibox li#home a {
+            width: 29px;
+            height: 30px;
+            left: 68px;
+            top: 248px;
+            background: url(/dist/mibox/home.png) no-repeat 0px 0
+        }
+        
+        #remote-control-mibox li#back a {
+            width: 28px;
+            height: 29px;
+            left: 17px;
+            top: 249px;
+            background: url(/dist/mibox/left.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#right a {
+            width: 23px;
+            height: 59px;
+            left: 139px;
+            top: 365px;
+            background: url(/dist/mibox/remote-circle3.png) no-repeat -98px -53px
+        }
+        
+        #remote-control-mibox li#top a {
+            width: 29px;
+            height: 29px;
+            left: 69px;
+            top: 93px;
+            background: url(/dist/mibox/top.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#bottom a {
+            width: 29px;
+            height: 29px;
+            left: 68px;
+            top: 190px;
+            background: url(/dist/mibox/bottom.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#ok a {
+            width: 29px;
+            height: 29px;
+            left: 68px;
+            top: 141px;
+            background: url(/dist/mibox/ok.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#home a:hover {
+            background: url(/dist/mibox/home_over.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#back a:hover {
+            background: url(/dist/mibox/left_over.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#top a:hover {
+            background: url(/dist/mibox/top_over.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#bottom a:hover {
+            background: url(/dist/mibox/bottom_over.png) no-repeat 0px 0px
+        }
+        
+        #remote-control-mibox li#ok a:hover {
+            background: url(/dist/mibox/ok_over.png) no-repeat 0px 0px
+        }
+    </style>
+
+
+
+</head>
+
+</html>
+
+
+
+
+<div class="container">
+    <div style="text-align:center">
+
+    </div>
+    <div id="remote-control-mibox">
+        <h2>
+            Main navigation
+        </h2>
+        <ul>
+            <li id="power" class="myButton"><a href="#" title="Power"><span>Power</span></a></li>
+            <li id="microphone" class="myButton"><a href="#" title="microphone"><span>microphone</span></a></li>
+            <li id="volumeup" class="myButton"><a href="#" title="volume"><span>volume</span></a></li>
+            <li id="volumedown" class="myButton"><a href="#" title="volumedown"><span>volumedown</span></a></li>
+            <li id="clickleft" class="myButton"><a href="#" title="clickleft"><span>clickleft</span></a></li>
+            <li id="clickright" class="myButton"><a href="#" title="clickright"><span>clickright</span></a></li>
+
+        </ul>
+
+
+        <ul>
+            <li class="myButton" id="home"><a href="#" title="home"><span>home</span></a></li>
+            <li class="myButton" id="back"><a href="#" title="Go back to beginning"><span>back</span></a></li>
+            <li class="myButton" id="top"><a href="#" title="Top of gallery"><span>Top of Gallery</span></a></li>
+            <li class="myButton" id="bottom"><a href="#" title="Bottom of gallery"><span>Bottom of Gallery</span></a></li>
+            <li class="myButton" id="ok"><a href="#" title="OK - start slideshow"><span>OK - start slideshow</span></a></li>
+        </ul>
+    </div>
+</div>
