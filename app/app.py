@@ -65,7 +65,7 @@ for device in devices["devices"]:
         logger.error("Error adding ADB Device with IP: " + device["ip"])
         logger.error(str(e))
 
-# print(adb_devices[0].device.shell('echo "CPU threads: $(grep -c processor /proc/cpuinfo)"'))
+print(adb_devices[0].device.shell('dumpsys package com.plexapp.android |grep -iE ".+\.[0-9A-Z_\-]+:$" |sort'))
 #ls sys/class/thermal/
 
 @app.get('/remotes/mibox', include_in_schema=False)
@@ -101,6 +101,31 @@ def memory(device:str, request: Request):
         device_memory[k] = v
     memory_json = jsonable_encoder(device_memory)
     return JSONResponse(content=memory_json)
+
+@app.get('/api/{device}/apps/system')
+def sysapps(device:str, request: Request):
+    sysapps = {}
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    systemapps = adb_device.device.shell("pm list packages -s").splitlines()
+    i=0
+    for sysap in systemapps:
+        sysapps[i] = sysap.split(':')[1]
+        i+=1
+    sysapps_json = jsonable_encoder(sysapps)
+    return JSONResponse(content=sysapps_json)    
+
+@app.get('/api/{device}/apps/3rd')
+def sysapps(device:str, request: Request):
+    apps = {}
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    apps3rd = adb_device.device.shell("pm list packages -3").splitlines()
+    i=0
+    for app3rd in apps3rd:
+        apps[i] = app3rd.split(':')[1]
+        i+=1
+    apps3rd_json = jsonable_encoder(apps)
+    return JSONResponse(content=apps3rd_json)    
+
 
 @app.get('/api/{device}/cpu')
 def cpu(device:str, request: Request):
