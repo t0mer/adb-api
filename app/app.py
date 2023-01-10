@@ -1,8 +1,12 @@
+ # -*- coding: utf-8 -*
+
+import os
 import time
 import yaml
 import json
 import shutil
 import uvicorn
+import requests
 from os import path
 from loguru import logger
 from device import Device
@@ -13,8 +17,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
+from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from adb_shell.adb_device import AdbDeviceTcp, AdbDeviceUsb
+
 
 
 def generate_keys():
@@ -53,6 +59,16 @@ devices = read_devices_list()
 app = FastAPI(title="Virtual Remote for android tv", description="Virtualy control you android tv devices", version="1.0.0",  contact={"name": "Tomer Klein", "email": "tomer.klein@gmail.com", "url": "https://github.com/t0mer/virtual-remote"})
 app.mount("/dist", StaticFiles(directory="dist"), name="dist")
 templates = Jinja2Templates(directory="templates/")
+AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
+AWS_SECRET = os.getenv("AWS_SECRET")
+USE_PROXY = os.getenv("USE_PROXY")
+
+if bool(USE_PROXY) == True:
+    gateway = ApiGateway("https://cse.google.com",access_key_id=AWS_ACCESS_KEY,access_key_secret=AWS_SECRET)
+    gateway.start()
+    session = requests.Session()
+    session.mount("https://cse.google.com", gateway)
+
 
 for device in devices["devices"]:
     try:
@@ -65,8 +81,6 @@ for device in devices["devices"]:
         logger.error("Error adding ADB Device with IP: " + device["ip"])
         logger.error(str(e))
 
-print(adb_devices[0].device.shell('dumpsys package com.plexapp.android |grep -iE ".+\.[0-9A-Z_\-]+:$" |sort'))
-#ls sys/class/thermal/
 
 @app.get('/remotes/mibox', include_in_schema=False)
 def index(request: Request):
@@ -145,10 +159,24 @@ def cpu(device:str, request: Request):
     return JSONResponse(content=cpu_json)
 
 
-# print(adb_devices[0].shell("pm list packages -3"))
-# print(adb_devices[0].shell("ip wlan0"))
-# print(adb_devices[0].shell("cat /proc/meminfo | grep MemTotal"))
+@app.get('/api/app/{app}/details')
+def get_app_details(app:str, request: Request):
+    app_details={}
+    url='https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=1&hl=en&source=gcsc&gss=.com&cselibv=c20e9fb0a344f1f9&cx=12515e75ed027d689&q='+ app +'&cse_tok=ALwrddFOhDvzXM0yPEPpmDDLPzzC:1673362684904&sort=&cseclient=hosted-page-client&callback=google.search.cse.api12431'
+    if bool(USE_PROXY) == True:
+        logger.info("Getting app info using proxy")
+        response = session.get(url, params={"theme": "dark"})
+    else:
+        logger.info("Getting app info without proxy")
+        response = requests.get(url)
 
+    data = response.text.replace("/*O_o*/","").replace("\n","").replace("google.search.cse.api12431({","").replace(");","")
+    data = json.loads("{" + data)
+    app_details["appname"] = data['results'][0]['titleNoFormatting'].replace(" - Apps on Google Play","")
+    app_details["appurl"] = data['results'][0]['unescapedUrl']
+    app_details["appimage"] = data['results'][0]['richSnippet']['cseThumbnail']["src"]
+    app_details_json = jsonable_encoder(app_details)
+    return JSONResponse(content=app_details_json)
 
 
 
@@ -157,3 +185,8 @@ if __name__ == "__main__":
     load_keys()
     logger.info("Virtual remote is up and running")
     uvicorn.run(app, host="0.0.0.0", port=80)
+    
+    
+    
+
+
