@@ -1,7 +1,6 @@
  # -*- coding: utf-8 -*
 
 import os
-import time
 import yaml
 import json
 import shutil
@@ -82,9 +81,9 @@ for device in devices["devices"]:
         logger.error(str(e))
 
 
-@app.get('/remotes/mibox', include_in_schema=False)
-def index(request: Request):
-    return templates.TemplateResponse('mibox.html', context={'request': request})
+@app.get('/remotes/{remote}', include_in_schema=False)
+def index(remote: str, request: Request):
+    return templates.TemplateResponse(remote + '.html', context={'request': request})
 
 @app.get('/api/devices', include_in_schema=False)
 def devices_lis(request: Request):
@@ -157,6 +156,20 @@ def cpu(device:str, request: Request):
     
     cpu_json = jsonable_encoder(device_cpu)
     return JSONResponse(content=cpu_json)
+
+@app.get("/api/{device}/{command}")
+def command(device:str,command: str,request: Request):
+    response = {}
+    try:
+        adb_device = next(d for d in adb_devices if d.ip == device)
+        cpuinfo = adb_device.device.shell("input keyevent " + command)
+        response["success"] = True
+        response["message"] = "Command executed successfuly"
+        return JSONResponse(content=jsonable_encoder(response))
+    except Exception as e:
+        response["success"] = False
+        response["message"] = str(e)
+        return JSONResponse(content=jsonable_encoder(response))
 
 
 @app.get('/api/app/{app}/details')
