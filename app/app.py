@@ -191,12 +191,17 @@ def get_app_details(app:str, request: Request):
     app_details_json = jsonable_encoder(app_details)
     return JSONResponse(content=app_details_json)
 
+@app.get('/api/{device}/{app}/{activity}')
+def get_app_details(device: str, app: str, activity: str, request: Request):
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    adb_device.device.shell("am start -n " + app + "/" + activity)
 
 
 
 if __name__ == "__main__":
     load_keys()
     logger.info("Virtual remote is up and running")
+    print(adb_devices[0].device.shell('dumpsys package il.co.stingtv.atv | grep -iE ".+\.[0-9A-Z_\-]+:$" |sort'))
     uvicorn.run(app, host="0.0.0.0", port=80)
     
     

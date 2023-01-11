@@ -1,7 +1,7 @@
 <html>
 
 <head>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         ha-card {
             background-color: transparent;
@@ -364,14 +364,12 @@
             $(".myButton").click(function () {
             device = $('#slct').val();
             command = $(this).data( "command");
-            console.log(command);
-            console.log(device);
             $.ajax(
                 {
                     url: '/api/'+ device + '/' + command,
                     dataType: "json",
                     success: function (data) {
-                      colsole.log(data)
+                      
                     },
                     error: function (e) {
 
