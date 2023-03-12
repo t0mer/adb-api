@@ -3,6 +3,7 @@
 import os
 import yaml
 import json
+import uuid
 import shutil
 import uvicorn
 import requests
@@ -19,7 +20,6 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from adb_shell.adb_device import AdbDeviceTcp, AdbDeviceUsb
-
 
 
 def generate_keys():
@@ -62,6 +62,10 @@ AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
 AWS_SECRET = os.getenv("AWS_SECRET")
 USE_PROXY = os.getenv("USE_PROXY")
 
+
+if not os.path.exists('dist/screenshots'):
+   os.makedirs('dist/screenshots')
+
 if bool(USE_PROXY) == True:
     gateway = ApiGateway("https://cse.google.com",access_key_id=AWS_ACCESS_KEY,access_key_secret=AWS_SECRET)
     gateway.start()
@@ -81,16 +85,16 @@ for device in devices["devices"]:
         logger.error(str(e))
 
 
-@app.get('/remotes/{remote}', include_in_schema=False)
+@app.get('/remotes/{remote}')
 def index(remote: str, request: Request):
     return templates.TemplateResponse(remote + '.html', context={'request': request})
 
-@app.get('/api/devices', include_in_schema=False)
+@app.get('/api/devices')
 def devices_lis(request: Request):
     json_devices = jsonable_encoder(devices)
     return JSONResponse(content=json_devices)
 
-@app.get('/api/{device}/properties', include_in_schema=False)
+@app.get('/api/{device}/properties')
 def properties(device:str, request: Request):
     properties = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
@@ -99,7 +103,7 @@ def properties(device:str, request: Request):
     for prop in device_props.splitlines():
         k= prop.split(':')[0].replace('[','').replace(']','')
         v= prop.split(':')[1].replace('[','').replace(']','')
-        properties[k] = v
+        properties[k.replace(".","_")] = v
     json_devices = jsonable_encoder(properties)
     return JSONResponse(content=json_devices)
 
@@ -132,10 +136,9 @@ def sysapps(device:str, request: Request):
     apps = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
     apps3rd = adb_device.device.shell("pm list packages -3").splitlines()
-    i=0
     for app3rd in apps3rd:
-        apps[i] = app3rd.split(':')[1]
-        i+=1
+        app_id = app3rd.split(':')[1]
+        apps[app_id] = get_app_details(app_id)
     apps3rd_json = jsonable_encoder(apps)
     return JSONResponse(content=apps3rd_json)    
 
@@ -162,7 +165,7 @@ def command(device:str,command: str,request: Request):
     response = {}
     try:
         adb_device = next(d for d in adb_devices if d.ip == device)
-        cpuinfo = adb_device.device.shell("input keyevent " + command)
+        adb_device.device.shell("input keyevent " + command)
         response["success"] = True
         response["message"] = "Command executed successfuly"
         return JSONResponse(content=jsonable_encoder(response))
@@ -171,11 +174,44 @@ def command(device:str,command: str,request: Request):
         response["message"] = str(e)
         return JSONResponse(content=jsonable_encoder(response))
 
+@app.get('/api/{device}/{app}/open')
+def get_app_details(device: str, app: str,  request: Request):
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    adb_device.device.shell("monkey -p "+ app +" -c android.intent.category.LAUNCHER 1")
 
-@app.get('/api/app/{app}/details')
-def get_app_details(app:str, request: Request):
+@app.get('/api/{device}/{app}/close')
+def get_app_details(device: str, app: str,  request: Request):
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    adb_device.device.shell("am force-stop  "+ app )
+
+
+@app.get('/api/{device}/execute/{command}')
+def get_app_details(device: str, command: str,  request: Request):
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    return(adb_device.device.shell(command))
+
+
+
+@app.get('/api/screenshot/get/{device}')
+def screenshot(device: str, request: Request):
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    img_name = str(uuid.uuid4())
+    adb_device.device.shell('screencap -p "/sdcard/' + img_name + '.png"')
+    adb_device.device.pull("/sdcard/" + img_name + ".png", "dist/screenshots/" + img_name + ".png")
+    result = {}
+    result["img"] =  "dist/screenshots" + img_name + ".png"
+    result["success"] = True
+    return JSONResponse(content=jsonable_encoder(result))
+
+
+    
+
+# @app.get('/api/app/{app}/details')
+def get_app_details(app:str):
     app_details={}
-    url='https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=1&hl=en&source=gcsc&gss=.com&cselibv=c20e9fb0a344f1f9&cx=12515e75ed027d689&q='+ app +'&cse_tok=ALwrddFOhDvzXM0yPEPpmDDLPzzC:1673362684904&sort=&cseclient=hosted-page-client&callback=google.search.cse.api12431'
+    # url='https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=1&hl=en&source=gcsc&gss=.com&cselibv=c20e9fb0a344f1f9&cx=12515e75ed027d689&q='+ app +'&cse_tok=ALwrddFOhDvzXM0yPEPpmDDLPzzC:1673362684904&sort=&cseclient=hosted-page-client&callback=google.search.cse.api12431'
+    url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&q={app}&start=1"
+
     if bool(USE_PROXY) == True:
         logger.info("Getting app info using proxy")
         response = session.get(url, params={"theme": "dark"})
@@ -183,25 +219,21 @@ def get_app_details(app:str, request: Request):
         logger.info("Getting app info without proxy")
         response = requests.get(url)
 
-    data = response.text.replace("/*O_o*/","").replace("\n","").replace("google.search.cse.api12431({","").replace(");","")
-    data = json.loads("{" + data)
-    app_details["appname"] = data['results'][0]['titleNoFormatting'].replace(" - Apps on Google Play","")
-    app_details["appurl"] = data['results'][0]['unescapedUrl']
-    app_details["appimage"] = data['results'][0]['richSnippet']['cseThumbnail']["src"]
-    app_details_json = jsonable_encoder(app_details)
-    return JSONResponse(content=app_details_json)
-
-@app.get('/api/{device}/{app}/{activity}')
-def get_app_details(device: str, app: str, activity: str, request: Request):
-    adb_device = next(d for d in adb_devices if d.ip == device)
-    adb_device.device.shell("am start -n " + app + "/" + activity)
-
+    data = json.loads(response.text)
+    app_details["appname"] = data["items"][0]["title"]
+    app_details["appurl"] = data["items"][0]["link"]
+    app_details["appimage"] = data["items"][0]["pagemap"]["cse_image"][0]["src"]
+    # app_details_json = jsonable_encoder(app_details)
+    # return JSONResponse(content=app_details_json)
+    return app_details
 
 
 if __name__ == "__main__":
     load_keys()
     logger.info("Virtual remote is up and running")
-    print(adb_devices[0].device.shell('dumpsys package il.co.stingtv.atv | grep -iE ".+\.[0-9A-Z_\-]+:$" |sort'))
+    adb_device = adb_devices[0]
+
+    
     uvicorn.run(app, host="0.0.0.0", port=80)
     
     

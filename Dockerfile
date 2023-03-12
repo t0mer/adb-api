@@ -6,7 +6,9 @@ LABEL maintainer="tomer.klein@gmail.com"
 ENV PYTHONIOENCODING=utf-8
 ENV LANG=C.UTF-8
 ENV LOG_LEVEL "DEBUG"
-
+ENV AWS_ACCESS_KEY ""
+ENV AWS_SECRET ""
+ENV USE_PROXY=0
 RUN apt update -yqq
 
 RUN apt install -yqq python3-pip && \
