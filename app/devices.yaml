@@ -1,9 +1,11 @@
 devices:
 
-  - name: 
+  - id: 1
+    name: 
     ip: 
     port: 
 
-  - name: 
+  - id: 2
+    name: 
     ip: 
     port: 
