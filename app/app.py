@@ -9,18 +9,21 @@ import uvicorn
 import requests
 from os import path
 from loguru import logger
-from device import Device
+# from device import Device
+from datetime import datetime
+from google_play_scraper import app as app_scrap
 from fastapi import FastAPI, Request
 from androiddevice import AndriodDevice
 from adb_shell.auth.keygen import keygen
+from sqliteconnector import SqliteConnector
 from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse
-from requests_ip_rotator import ApiGateway, EXTRA_REGIONS
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from adb_shell.adb_device import AdbDeviceTcp, AdbDeviceUsb
 
+KEYS_PATH = './keys/adb'
 
 def generate_keys():
     """ 
@@ -51,27 +54,18 @@ def read_devices_list():
             logger.error(exc)
             return []
 
-KEYS_PATH = './keys/adb'
+
 signer = load_keys()
 adb_devices=[]
 devices = read_devices_list()
 app = FastAPI(title="Virtual Remote for android tv", description="Virtualy control you android tv devices", version="1.0.0",  contact={"name": "Tomer Klein", "email": "tomer.klein@gmail.com", "url": "https://github.com/t0mer/virtual-remote"})
 app.mount("/dist", StaticFiles(directory="dist"), name="dist")
 templates = Jinja2Templates(directory="templates/")
-AWS_ACCESS_KEY = os.getenv("AWS_ACCESS_KEY")
-AWS_SECRET = os.getenv("AWS_SECRET")
-USE_PROXY = os.getenv("USE_PROXY")
+connector = SqliteConnector()
 
 
 if not os.path.exists('dist/screenshots'):
    os.makedirs('dist/screenshots')
-
-if bool(USE_PROXY) == True:
-    gateway = ApiGateway("https://cse.google.com",access_key_id=AWS_ACCESS_KEY,access_key_secret=AWS_SECRET)
-    gateway.start()
-    session = requests.Session()
-    session.mount("https://cse.google.com", gateway)
-
 
 for device in devices["devices"]:
     try:
@@ -160,14 +154,14 @@ def cpu(device:str, request: Request):
     cpu_json = jsonable_encoder(device_cpu)
     return JSONResponse(content=cpu_json)
 
-@app.get("/api/{device}/{command}")
-def command(device:str,command: str,request: Request):
+@app.get("/api/{device}/{keyevent}")
+def command(device:str,keyevent: str,request: Request):
     response = {}
     try:
         adb_device = next(d for d in adb_devices if d.ip == device)
-        adb_device.device.shell("input keyevent " + command)
+        logger.info(adb_device.device.shell("input keyevent " + keyevent))
         response["success"] = True
-        response["message"] = "Command executed successfuly"
+        response["message"] = "keyevent command executed successfuly"
         return JSONResponse(content=jsonable_encoder(response))
     except Exception as e:
         response["success"] = False
@@ -175,22 +169,29 @@ def command(device:str,command: str,request: Request):
         return JSONResponse(content=jsonable_encoder(response))
 
 @app.get('/api/{device}/{app}/open')
-def get_app_details(device: str, app: str,  request: Request):
+def open_app(device: str, app: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
     adb_device.device.shell("monkey -p "+ app +" -c android.intent.category.LAUNCHER 1")
 
+
+@app.get('/api/{device}/start')
+def open_app(device: str, activity: str, request: Request):
+    adb_device = next(d for d in adb_devices if d.ip == device)
+    adb_device.device.shell("am start -n " + activity)
+
+
+
+
 @app.get('/api/{device}/{app}/close')
-def get_app_details(device: str, app: str,  request: Request):
+def close_app(device: str, app: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
     adb_device.device.shell("am force-stop  "+ app )
 
 
 @app.get('/api/{device}/execute/{command}')
-def get_app_details(device: str, command: str,  request: Request):
+def execute_command(device: str, command: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
-    return(adb_device.device.shell(command))
-
-
+    return(adb_device.device.shell(command).splitlines())
 
 @app.get('/api/screenshot/get/{device}')
 def screenshot(device: str, request: Request):
@@ -203,28 +204,24 @@ def screenshot(device: str, request: Request):
     result["success"] = True
     return JSONResponse(content=jsonable_encoder(result))
 
-
-    
-
-# @app.get('/api/app/{app}/details')
 def get_app_details(app:str):
     app_details={}
-    # url='https://cse.google.com/cse/element/v1?rsz=filtered_cse&num=1&hl=en&source=gcsc&gss=.com&cselibv=c20e9fb0a344f1f9&cx=12515e75ed027d689&q='+ app +'&cse_tok=ALwrddFOhDvzXM0yPEPpmDDLPzzC:1673362684904&sort=&cseclient=hosted-page-client&callback=google.search.cse.api12431'
-    url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={SEARCH_ENGINE_ID}&q={app}&start=1"
+    if connector.is_app_info_exists(app):
+        data = connector.get_app_info_by_id(app)[0]
+        app_details["appname"] = data[1]
+        app_details["appurl"] = data[2]
+        app_details["appimage"] = data[3]
 
-    if bool(USE_PROXY) == True:
-        logger.info("Getting app info using proxy")
-        response = session.get(url, params={"theme": "dark"})
     else:
-        logger.info("Getting app info without proxy")
-        response = requests.get(url)
-
-    data = json.loads(response.text)
-    app_details["appname"] = data["items"][0]["title"]
-    app_details["appurl"] = data["items"][0]["link"]
-    app_details["appimage"] = data["items"][0]["pagemap"]["cse_image"][0]["src"]
-    # app_details_json = jsonable_encoder(app_details)
-    # return JSONResponse(content=app_details_json)
+        appinfo = app_scrap(
+                        app,
+                        lang='en', # defaults to 'en'
+                        country='il', # defaults to 'us'
+   )
+        app_details["appname"] = appinfo["title"]
+        app_details["appurl"] = appinfo["url"]
+        app_details["appimage"] = appinfo["icon"]
+        connector.add_app_info(app, app_details["appname"],app_details["appurl"],app_details["appimage"],datetime.now())
     return app_details
 
 
