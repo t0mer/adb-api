@@ -1,3 +1,4 @@
+pyyaml
 adb-shell
 adb-shell[usb]
 dataclasses-json
