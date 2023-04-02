@@ -4,7 +4,7 @@ from sqlite3 import Error
 from loguru import logger
 class SqliteConnector:
     def __init__(self):
-        self.db_file = "db/appinfo.db"
+        self.db_file = "config/appinfo.db"
         self.conn = None
         self.create_tables()
 

@@ -23,14 +23,14 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from adb_shell.adb_device import AdbDeviceTcp, AdbDeviceUsb
 
-KEYS_PATH = './keys/adb'
+KEYS_PATH = './config/adb'
 
 def generate_keys():
     """ 
     Generates keys if not exists
     """
     if not path.exists(KEYS_PATH) or not path.exists((KEYS_PATH + '.pub')):
-        keygen('./keys/adb')
+        keygen(KEYS_PATH)
 
 def load_keys():
     """
