@@ -72,4 +72,19 @@ devices:
 ```
 And update the devices list according to your devices details.
 
-*** The path for the config directory can be change and set by you, the path in the sample is just an example ***
+***The path for the config directory can be change and set by you, the path in the sample is just an example.***
+
+Now, run the following command to install and start the container:
+```bash
+docker-compose up -d
+```
+
+After the container starts, more file will be added to the config directory:
+1. 2 key files for connecting the devices (Certificates).
+2. sqlite db to speed up the performence of part of the api calls.
+
+You will also see the following message pops up on each of your streamers:
+
+[![Allow adb usb debugging](https://techblog.co.il/wp-content/uploads/2023/04/usb-debug.png)](https://techblog.co.il/wp-content/uploads/2023/04/usb-debug.png)
+
+Make sure to check the "Always allow from this computer" checkbox and click on the OK button. you will also need to restart the container.
