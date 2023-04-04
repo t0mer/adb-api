@@ -72,7 +72,7 @@ devices:
 ```
 And update the devices list according to your devices details.
 
-***The path for the config directory can be change and set by you, the path in the sample is just an example.***
+***You can set the path for the config directory. The one in the code sample is just an example.***
 
 Now, run the following command to install and start the container:
 ```bash
@@ -88,3 +88,9 @@ You will also see the following message pops up on each of your streamers:
 [![Allow adb usb debugging](https://techblog.co.il/wp-content/uploads/2023/04/usb-debug.png)](https://techblog.co.il/wp-content/uploads/2023/04/usb-debug.png)
 
 Make sure to check the "Always allow from this computer" checkbox and click on the OK button. you will also need to restart the container.
+
+## How to Use ADB-API
+ADB-API also includes OpenAPI swagger documentation to help you working with the system. with the swagger you will be able to test the api calls very easely.
+
+[![adb-api swagger](https://techblog.co.il/wp-content/uploads/2023/04/adb-api-swagger.png)](https://techblog.co.il/wp-content/uploads/2023/04/adb-api-swagger.png)
+
