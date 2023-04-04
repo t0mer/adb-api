@@ -27,3 +27,49 @@ With ADB-API, you can easily do the following things:
 * [dataclasses-json](https://pypi.org/project/dataclasses-json/) - This library provides a simple API for encoding and decoding dataclasses to and from JSON.
 * [adb-shell](https://pypi.org/project/adb-shell/) - A Python implementation of ADB with shell and FileSync functionality.
 * [pyyaml](https://pypi.org/project/PyYAML/) - YAML parser and emitter for Python
+
+
+## Installation and Configuration
+In order to use the ADB-API, you need to enable "Develpoer mode" on the Android tv based streamer. to do so, follow the next steps:
+1. On your TV device, navigate to Settings.
+2. In the Device row, select About.
+3. Scroll down to Build and select Build several times until you get the message "You are now a developer!"
+4. Return to Settings. In the Preferences row, select Developer options.
+5. Select Debugging > USB debugging and select On.
+6. Navigate back to the TV home screen.
+
+Now, after you enabled the Developer mode it's time to install the ADB-API docker. to do so, create a file named "docker-compose.yaml" and add the following code:
+
+```yaml
+version: "3.7"
+
+services:
+
+  adb_api:
+    image: techblog/adb-api
+    container_name: adb-api
+    privileged: true
+    restart: always
+    ports:
+      - "80:80" 
+    volumes:
+      - ./adb-api/config:/app/config
+```
+create a folder named "adb-api/config" on the same level with the yaml file and create a new file named "devices.yaml" with the following content:
+
+```yaml
+devices:
+
+  - id: 1
+    name: 
+    ip: 
+    port: 
+
+  - id: 2
+    name: 
+    ip: 
+    port: 
+```
+And update the devices list according to your devices details.
+
+*** The path for the config directory can be change and set by you, the path in the sample is just an example ***
