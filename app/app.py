@@ -212,24 +212,33 @@ def screenshot(device: str, request: Request, image: str):
     
 
 def get_app_details(app:str):
-    app_details={}
-    if connector.is_app_info_exists(app):
-        data = connector.get_app_info_by_id(app)[0]
-        app_details["appname"] = data[1]
-        app_details["appurl"] = data[2]
-        app_details["appimage"] = data[3]
+    try:
+        app_details={}
+        if connector.is_app_info_exists(app):
+            data = connector.get_app_info_by_id(app)[0]
+            app_details["appname"] = data[1]
+            app_details["appurl"] = data[2]
+            app_details["appimage"] = data[3]
 
-    else:
-        appinfo = app_scrap(
-                        app,
-                        lang='en', # defaults to 'en'
-                        country='il', # defaults to 'us'
-   )
-        app_details["appname"] = appinfo["title"]
-        app_details["appurl"] = appinfo["url"]
-        app_details["appimage"] = appinfo["icon"]
+        else:
+            appinfo = app_scrap(
+                            app,
+                            lang='en', # defaults to 'en'
+                            country='il', # defaults to 'us'
+    )
+            app_details["appname"] = appinfo["title"]
+            app_details["appurl"] = appinfo["url"]
+            app_details["appimage"] = appinfo["icon"]
+            connector.add_app_info(app, app_details["appname"],app_details["appurl"],app_details["appimage"],datetime.now())
+        return app_details
+    except Exception as e:
+        logger.error("Error getting app info. " + str(e))
+        app_details["appname"] = ""
+        app_details["appurl"] = ""
+        app_details["appimage"] = ""
         connector.add_app_info(app, app_details["appname"],app_details["appurl"],app_details["appimage"],datetime.now())
-    return app_details
+        return app_details
+
 
 
 if __name__ == "__main__":
