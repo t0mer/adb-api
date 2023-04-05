@@ -301,7 +301,6 @@ for example, running the sollowing command **"input keyevent 3"** will simulate 
 
 
 ## Usefull list of ADB Commands
-
 adb help // List all comands
 
 == Adb Server
