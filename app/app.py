@@ -19,9 +19,10 @@ from sqliteconnector import SqliteConnector
 from fastapi.staticfiles import StaticFiles
 from fastapi.encoders import jsonable_encoder
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import HTMLResponse, JSONResponse
 from adb_shell.auth.sign_pythonrsa import PythonRSASigner
 from adb_shell.adb_device import AdbDeviceTcp, AdbDeviceUsb
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+
 
 KEYS_PATH = './config/adb'
 
@@ -193,16 +194,22 @@ def execute_command(device: str, command: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
     return(adb_device.device.shell(command).splitlines())
 
-@app.get('/api/screenshot/get/{device}')
-def screenshot(device: str, request: Request):
-    adb_device = next(d for d in adb_devices if d.ip == device)
-    img_name = str(uuid.uuid4())
-    adb_device.device.shell('screencap -p "/sdcard/' + img_name + '.png"')
-    adb_device.device.pull("/sdcard/" + img_name + ".png", "dist/screenshots/" + img_name + ".png")
-    result = {}
-    result["img"] =  "dist/screenshots" + img_name + ".png"
-    result["success"] = True
-    return JSONResponse(content=jsonable_encoder(result))
+@app.get('/api/screenshot/get/{device}/{image}', response_class=FileResponse)
+def screenshot(device: str, request: Request, image: str):
+    try:
+        adb_device = next(d for d in adb_devices if d.ip == device)
+        img_name = str(uuid.uuid4())
+        adb_device.device.shell('screencap -p "/sdcard/' + image + '.png"')
+        adb_device.device.pull("/sdcard/" + image + ".png", "dist/screenshots/" + image + ".png")
+        try:
+            adb_device.device.shell('rm -f "/sdcard/' + image + '.png"')
+        except Exception as e:
+            logger.error("Error delete image from the device. " + str(e))
+        return "dist/screenshots/" + image + ".png"
+    except Exception as e:
+        logger.error("Error taking screenshot. " + str(e))
+
+    
 
 def get_app_details(app:str):
     app_details={}
