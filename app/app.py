@@ -119,10 +119,9 @@ def sysapps(device:str, request: Request):
     sysapps = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
     systemapps = adb_device.device.shell("pm list packages -s").splitlines()
-    i=0
     for sysap in systemapps:
-        sysapps[i] = sysap.split(':')[1]
-        i+=1
+        sysapp_id = sysap.split(':')[1]
+        sysapps[sysapp_id]=get_app_details(sysapp_id)
     sysapps_json = jsonable_encoder(sysapps)
     return JSONResponse(content=sysapps_json)    
 
