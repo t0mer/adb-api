@@ -71,9 +71,12 @@ if not os.path.exists('dist/screenshots'):
 
 def connect_to_device(adb_device):
     try:
-        adb_device.connect(rsa_keys=[signer], auth_timeout_s=0.1)
+        logger.info("Reconnecting to device")
+        adb_device.device.connect(rsa_keys=[signer], auth_timeout_s=0.1)
+        return adb_device
     except Exception as e:
         logger.error("Unable to connect: " + str(e))
+        return adb_device
 
 for device in devices["devices"]:
     try:
@@ -85,8 +88,6 @@ for device in devices["devices"]:
     except Exception as e:
         logger.error("Error adding ADB Device with IP: " + device["ip"])
         logger.error(str(e))
-
-
 
 
 
@@ -103,7 +104,7 @@ def devices_lis(request: Request):
 def properties(device:str, request: Request):
     properties = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     device_props = adb_device.device.shell("getprop")
     for prop in device_props.splitlines():
         k= prop.split(':')[0].replace('[','').replace(']','')
@@ -116,7 +117,7 @@ def properties(device:str, request: Request):
 def memory(device:str, request: Request):
     device_memory = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     meminfo = adb_device.device.shell("cat /proc/meminfo")
     for prop in meminfo.splitlines():
         k= prop.split(':')[0].strip()
@@ -129,7 +130,7 @@ def memory(device:str, request: Request):
 def sysapps(device:str, request: Request):
     sysapps = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     systemapps = adb_device.device.shell("pm list packages -s").splitlines()
     for sysap in systemapps:
         sysapp_id = sysap.split(':')[1]
@@ -141,7 +142,7 @@ def sysapps(device:str, request: Request):
 def sysapps(device:str, request: Request):
     apps = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     apps3rd = adb_device.device.shell("pm list packages -3").splitlines()
     for app3rd in apps3rd:
         app_id = app3rd.split(':')[1]
@@ -154,7 +155,7 @@ def sysapps(device:str, request: Request):
 def cpu(device:str, request: Request):
     device_cpu = {}
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     cores =adb_devices[0].device.shell("grep -c processor /proc/cpuinfo")
     cpuinfo = adb_device.device.shell("cat /proc/cpuinfo")
     cpu_num = 0
@@ -173,7 +174,7 @@ def command(device:str,keyevent: str,request: Request):
     response = {}
     try:
         adb_device = next(d for d in adb_devices if d.ip == device)
-        connect_to_device(adb_device)
+        adb_device = connect_to_device(adb_device)
         logger.info(adb_device.device.shell("input keyevent " + keyevent))
         response["success"] = True
         response["message"] = "keyevent command executed successfuly"
@@ -186,14 +187,14 @@ def command(device:str,keyevent: str,request: Request):
 @app.get('/api/{device}/{app}/open')
 def open_app(device: str, app: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     adb_device.device.shell("monkey -p "+ app +" -c android.intent.category.LAUNCHER 1")
 
 
 @app.get('/api/{device}/start')
 def open_app(device: str, activity: str, request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     adb_device.device.shell("am start -n " + activity)
 
 
@@ -202,21 +203,21 @@ def open_app(device: str, activity: str, request: Request):
 @app.get('/api/{device}/{app}/close')
 def close_app(device: str, app: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     adb_device.device.shell("am force-stop  "+ app )
 
 
 @app.get('/api/{device}/execute/{command}')
 def execute_command(device: str, command: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
-    connect_to_device(adb_device)
+    adb_device = connect_to_device(adb_device)
     return(adb_device.device.shell(command).splitlines())
 
 @app.get('/api/screenshot/get/{device}/{image}', response_class=FileResponse)
 def screenshot(device: str, request: Request, image: str):
     try:
         adb_device = next(d for d in adb_devices if d.ip == device)
-        connect_to_device(adb_device)
+        adb_device = connect_to_device(adb_device)
         img_name = str(uuid.uuid4())
         adb_device.device.shell('screencap -p "/sdcard/' + image + '.png"')
         adb_device.device.pull("/sdcard/" + image + ".png", "dist/screenshots/" + image + ".png")
