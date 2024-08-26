@@ -211,7 +211,7 @@ def close_app(device: str, app: str,  request: Request):
 def execute_command(device: str, command: str,  request: Request):
     adb_device = next(d for d in adb_devices if d.ip == device)
     adb_device = connect_to_device(adb_device)
-    return(adb_device.device.shell(command).splitlines())
+    return(adb_device.device.shell(command.replace('&#47;',"/")).splitlines())
 
 @app.get('/api/screenshot/get/{device}/{image}', response_class=FileResponse)
 def screenshot(device: str, request: Request, image: str):
