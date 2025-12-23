@@ -3,3 +3,4 @@ adb-shell
 adb-shell[usb]
 dataclasses-json
 google-play-scraper==1.2.2
+marshmallow>=3.26.2 # not directly required, pinned by Snyk to avoid a vulnerability
